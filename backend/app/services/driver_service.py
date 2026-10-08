@@ -54,6 +54,7 @@ class DriverLocationService:
         longitude: float,
         timestamp: float,
         status: str | None = None,
+        internal: bool = False,
     ) -> dict:
         cell = self.spatial.lat_lng_to_h3(latitude, longitude)
         key = driver_key(driver_id)
@@ -61,6 +62,17 @@ class DriverLocationService:
 
         if existing and timestamp < float(existing["last_updated"]):
             raise StaleLocationUpdate(f"Update for {driver_id} is older than the stored one")
+
+        if (
+            existing
+            and existing.get("status") == "busy"
+            and not internal
+            and settings.trip_sim_moves_busy_drivers
+        ):
+            # Simulation shortcut: the trip simulator moves busy drivers, so outside pings
+            # only refresh the "still alive" timestamp.
+            await self.redis.hset(key, "last_updated", str(timestamp))
+            return parse_driver({**existing, "last_updated": str(timestamp)})
 
         if status is None:
             previous = existing.get("status")

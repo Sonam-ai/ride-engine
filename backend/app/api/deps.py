@@ -1,23 +1,32 @@
 from fastapi import Depends, Request
-from redis.asyncio import Redis
 
+from app.core.container import Container
 from app.services.driver_service import DriverLocationService
+from app.services.quote_service import QuoteService
 from app.services.ride_service import RideRequestService
+from app.services.trip_service import TripService
 from app.services.zone_service import ZoneService
-from app.spatial.h3_service import spatial_service
 
 
-def get_redis(request: Request) -> Redis:
-    return request.app.state.redis
+def get_container(request: Request) -> Container:
+    return request.app.state.container
 
 
-def get_driver_service(redis: Redis = Depends(get_redis)) -> DriverLocationService:
-    return DriverLocationService(redis, spatial_service)
+def get_driver_service(c: Container = Depends(get_container)) -> DriverLocationService:
+    return c.drivers
 
 
-def get_ride_service(redis: Redis = Depends(get_redis)) -> RideRequestService:
-    return RideRequestService(redis, spatial_service)
+def get_ride_service(c: Container = Depends(get_container)) -> RideRequestService:
+    return c.rides
 
 
-def get_zone_service(redis: Redis = Depends(get_redis)) -> ZoneService:
-    return ZoneService(redis, spatial_service)
+def get_zone_service(c: Container = Depends(get_container)) -> ZoneService:
+    return c.zones
+
+
+def get_quote_service(c: Container = Depends(get_container)) -> QuoteService:
+    return c.quotes
+
+
+def get_trip_service(c: Container = Depends(get_container)) -> TripService:
+    return c.trips

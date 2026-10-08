@@ -15,7 +15,7 @@ def test_request_is_created_in_the_right_cell(client):
     assert r.status_code == 201
     body = r.json()
     assert body["pickup_h3"] == CELL
-    assert body["status"] == "REQUESTED"
+    assert body["status"] == "QUOTED"
     assert client.get(f"/api/v1/zones/{CELL}").json()["open_requests"] == 1
 
 

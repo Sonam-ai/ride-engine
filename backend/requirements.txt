@@ -6,3 +6,8 @@ httpx
 h3
 redis
 fakeredis
+sqlalchemy
+aiosqlite
+greenlet
+numpy
+scipy

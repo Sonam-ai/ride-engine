@@ -22,6 +22,23 @@ class Point(BaseModel):
     longitude: float = Field(ge=-180, le=180)
 
 
+class QuoteRequestIn(BaseModel):
+    pickup: Point
+    destination: Point
+
+
+class QuoteOut(BaseModel):
+    pickup_h3: str
+    supply: int
+    demand: int
+    distance_km: float
+    duration_min: float
+    base_fare: float
+    surge_multiplier: float
+    estimated_fare: float
+    currency: str
+
+
 class RideRequestIn(BaseModel):
     rider_id: str = Field(min_length=1, max_length=64, pattern=ID_PATTERN)
     pickup: Point
@@ -40,4 +57,7 @@ class RideOut(BaseModel):
     status: RideStatus
     quoted_fare: float | None = None
     surge_multiplier: float | None = None
+    distance_km: float | None = None
+    duration_min: float | None = None
+    pickup_eta_seconds: float | None = None
     driver_id: str | None = None

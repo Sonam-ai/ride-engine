@@ -1,5 +1,5 @@
-def test_health_reports_redis_ok(client):
-    response = client.get("/health")
-    assert response.status_code == 200
-    assert response.json()["status"] == "ok"
-    assert response.json()["redis"] == "ok"
+def test_health_reports_redis_and_database_ok(client):
+    body = client.get("/health").json()
+    assert body["status"] == "ok"
+    assert body["redis"] == "ok"
+    assert body["database"] == "ok"
