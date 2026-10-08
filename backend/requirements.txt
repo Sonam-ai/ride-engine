@@ -4,3 +4,5 @@ pydantic-settings
 pytest
 httpx
 h3
+redis
+fakeredis
