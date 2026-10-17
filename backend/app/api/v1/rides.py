@@ -34,6 +34,11 @@ async def list_open_rides(service: RideRequestService = Depends(get_ride_service
     """Rides currently waiting for a driver."""
     return await service.list_open()
 
+@router.get("/live", response_model=list[RideOut])
+async def list_live_rides(service: RideRequestService = Depends(get_ride_service)) -> list[dict]:
+    """Open and active rides: what the dashboard map shows."""
+    return await service.list_live()
+
 
 @router.get("/{ride_id}", response_model=RideOut)
 async def get_ride(ride_id: str, service: RideRequestService = Depends(get_ride_service)) -> dict:

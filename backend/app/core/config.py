@@ -51,6 +51,21 @@ class Settings(BaseSettings):
     trip_time_scale: float = 8.0  # simulated time runs 8x faster than real time
     trip_sim_moves_busy_drivers: bool = True
 
+        # built-in simulation
+    driver_count: int = 100
+    gps_update_interval: float = 3.0
+    city_radius_km: float = 6.0
+    simulation_seed: int = 42
+    simulation_autostart: bool = False
+    demand_per_minute: float = 20.0
+
+    # browsers allowed to call the API (the dashboard)
+    cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
+
+    @property
+    def cors_origin_list(self) -> list[str]:
+        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
     model_config = SettingsConfigDict(env_file=ROOT_DIR / ".env", extra="ignore")
 
 

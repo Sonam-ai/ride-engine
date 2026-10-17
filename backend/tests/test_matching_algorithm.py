@@ -1,7 +1,7 @@
 from app.algorithms.matching import (
     DriverPoint, MatchingConfig, RequestPoint, match_global, match_nearest_first,
 )
-from simulator.geo_utils import offset_point
+from geo_utils import offset_point
 
 LAT, LNG = 12.9716, 77.5946
 cfg = MatchingConfig(max_distance_km=10.0, k_nearest=8)

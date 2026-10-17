@@ -21,6 +21,7 @@ from app.services.trip_service import TripService
 from app.services.zone_service import ZoneService
 from app.spatial.h3_service import SpatialService, spatial_service
 from app.workers.trip_worker import TripSimulator
+from app.services.simulation_service import SimulationService
 
 
 @dataclass
@@ -40,6 +41,7 @@ class Container:
     matching: MatchingService
     trip_sim: TripSimulator
     stats: StatsService
+    simulation:SimulationService
 
     @classmethod
     async def create(cls, redis_url: str | None = None, database_url: str | None = None) -> "Container":
@@ -51,7 +53,7 @@ class Container:
         events = EventBus()
         spatial = spatial_service
         persistence = PersistenceService(session_factory)
-        drivers = DriverLocationService(redis, spatial)
+        drivers = DriverLocationService(redis, spatial,events)
         surge = SurgeService(redis, spatial, SurgePricingEngine.from_settings(), persistence, events)
         quotes = QuoteService(surge, FareService.from_settings(), spatial)
         rides = RideRequestService(redis, spatial, quotes, persistence, events)
@@ -63,6 +65,7 @@ class Container:
             matching=MatchingService(drivers, rides, trips, MatchingConfig.from_settings()),
             trip_sim=TripSimulator(redis, trips, drivers),
             stats=StatsService(redis, drivers),
+            simulation=SimulationService(redis, drivers, rides, events),
         )
 
     async def close(self) -> None:

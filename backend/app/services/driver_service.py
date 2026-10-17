@@ -1,7 +1,7 @@
 import time
 
 from redis.asyncio import Redis
-
+from app.core.events import EventBus
 from app.core.config import settings
 from app.spatial.h3_service import SpatialService
 
@@ -43,9 +43,11 @@ def parse_driver(data: dict[str, str]) -> dict:
 
 
 class DriverLocationService:
-    def __init__(self, redis: Redis, spatial: SpatialService) -> None:
+    def __init__(self, redis: Redis, spatial: SpatialService,events:EventBus|None=None) -> None:
         self.redis = redis
         self.spatial = spatial
+        self.events=events
+        
 
     async def update_location(
         self,
@@ -103,7 +105,13 @@ class DriverLocationService:
             pipe.srem(cell_available_key(cell), driver_id)
         await pipe.execute()
 
-        return parse_driver({**existing, **record})
+        result = parse_driver({**existing, **record})
+        if self.events:
+            await self.events.publish(
+                "driver_location_updated",
+                {k: result[k] for k in ("driver_id", "latitude", "longitude", "h3_cell", "status")},
+            )
+        return result
 
     async def get_driver(self, driver_id: str) -> dict:
         data = await self.redis.hgetall(driver_key(driver_id))
@@ -121,6 +129,20 @@ class DriverLocationService:
         if status:
             drivers = [d for d in drivers if d["status"] == status]
         return drivers
+
+    async def remove_driver(self, driver_id: str) -> bool:
+        data = await self.redis.hgetall(driver_key(driver_id))
+        if not data:
+            return False
+        pipe = self.redis.pipeline()
+        pipe.delete(driver_key(driver_id))
+        pipe.srem(ALL_DRIVERS, driver_id)
+        pipe.srem(cell_drivers_key(data["h3_cell"]), driver_id)
+        pipe.srem(cell_available_key(data["h3_cell"]), driver_id)
+        await pipe.execute()
+        if self.events:
+            await self.events.publish("driver_removed", {"driver_id": driver_id})
+        return True 
 
     async def sweep_stale(self) -> int:
         """Mark drivers that stopped pinging as 'stale' and remove them from supply."""

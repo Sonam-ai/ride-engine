@@ -4,11 +4,13 @@ import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
 from app.api.v1 import drivers, h3 as h3_routes, rides, simulation, stats, zones
 from app.core.config import settings
 from app.core.container import Container
+from app.websocket import dashboard as ws_dashboard
 from app.workers.loops import start_workers
 
 logging.basicConfig(level=settings.log_level, format="%(asctime)s %(levelname)s %(name)s %(message)s")
@@ -20,6 +22,8 @@ async def lifespan(app: FastAPI):
     container = await Container.create()
     app.state.container = container
     tasks = start_workers(container)
+    if settings.simulation_autostart:
+        await container.simulation.start()
     logger.info("startup complete: redis=%s database=%s", settings.redis_url, settings.database_url)
     try:
         yield
@@ -32,7 +36,13 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Ride Engine", lifespan=lifespan)
-for module in (h3_routes, drivers, rides, zones, stats, simulation):
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origin_list,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+for module in (h3_routes, drivers, rides, zones, stats, simulation, ws_dashboard):
     app.include_router(module.router)
 
 

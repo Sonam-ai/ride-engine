@@ -1,8 +1,8 @@
 import random
 
-from simulator.driver_simulator import SimDriver, make_fleet
-from simulator.geo_utils import distance_km
-from simulator.rider_simulator import make_request
+from driver_simulator import SimDriver, make_fleet
+from geo_utils import distance_km
+from rider_simulator import make_request
 
 LAT, LNG = 12.9716, 77.5946
 

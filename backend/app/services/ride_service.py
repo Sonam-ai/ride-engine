@@ -118,10 +118,19 @@ class RideRequestService:
             raise RideNotFound(ride_id)
         return parse_ride(data)
 
-    async def list_open(self) -> list[dict]:
-        ids = sorted(await self.redis.smembers(RIDES_OPEN))
+    async def _fetch(self, set_key: str) -> list[dict]:
+        ids = sorted(await self.redis.smembers(set_key))
         pipe = self.redis.pipeline()
         for ride_id in ids:
             pipe.hgetall(ride_key(ride_id))
         rows = await pipe.execute()
         return [parse_ride(row) for row in rows if row]
+
+    async def list_open(self) -> list[dict]:
+        return await self._fetch(RIDES_OPEN)
+
+    async def list_active(self) -> list[dict]:
+        return await self._fetch(RIDES_ACTIVE)
+
+    async def list_live(self) -> list[dict]:
+        return await self.list_open() + await self.list_active()
