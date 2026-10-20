@@ -11,3 +11,5 @@ aiosqlite
 greenlet
 numpy
 scipy
+alembic
+asyncpg

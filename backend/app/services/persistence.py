@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime, timezone
 
-from sqlalchemy import update
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.config import settings
@@ -110,3 +110,13 @@ class PersistenceService:
             s.add_all([SurgeHistory(**row) for row in rows])
 
         await self._run("surge_history", op)
+
+    async def get_events(self, ride_id: str) -> list[dict]:
+        async with self.session_factory() as session:
+            rows = (
+                await session.execute(select(TripEvent).where(TripEvent.ride_id == ride_id).order_by(TripEvent.id))
+            ).scalars().all()
+        return [
+            {"event_type": r.event_type, "detail": r.detail, "created_at": r.created_at.isoformat()}
+            for r in rows
+        ]

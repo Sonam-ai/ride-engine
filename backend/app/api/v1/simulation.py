@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from app.api.deps import get_container
@@ -111,3 +111,12 @@ async def surge_now(c: Container = Depends(get_container)) -> dict:
     """Recompute surge for all zones immediately."""
     results = await c.surge.update_all()
     return {"zones_updated": len(results)}
+
+@router.post("/trip-tick")
+async def trip_tick(
+    dt_seconds: float = Query(default=settings.trip_tick_seconds, gt=0, le=100000),
+    c: Container = Depends(get_container),
+) -> dict:
+    """Advance all trips by dt_seconds of simulated driving (used by tests and load tests)."""
+    await c.trip_sim.tick(dt_seconds)
+    return {"ok": True}

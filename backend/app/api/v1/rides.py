@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.algorithms.state_machine import InvalidTransition
-from app.api.deps import get_quote_service, get_ride_service, get_trip_service
+from app.api.deps import get_container, get_quote_service, get_ride_service, get_trip_service
 from app.schemas.ride import QuoteOut, QuoteRequestIn, RideOut, RideRequestIn
 from app.services.quote_service import QuoteService
 from app.services.ride_service import DuplicateRide, RideNotFound, RideRequestService
 from app.services.trip_service import TripService
+from app.core.container import Container
 
 router = APIRouter(prefix="/api/v1/rides", tags=["rides"])
 
@@ -46,6 +47,11 @@ async def get_ride(ride_id: str, service: RideRequestService = Depends(get_ride_
         return await service.get_ride(ride_id)
     except RideNotFound as exc:
         raise HTTPException(status_code=404, detail=f"Ride {ride_id} not found") from exc
+
+@router.get("/{ride_id}/events")
+async def ride_events(ride_id: str, c: Container = Depends(get_container)) -> list[dict]:
+    """Audit trail: everything that happened to this ride, read from the database."""
+    return await c.persistence.get_events(ride_id)
 
 
 @router.post("/{ride_id}/cancel", response_model=RideOut)

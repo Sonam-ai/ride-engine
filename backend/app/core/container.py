@@ -22,6 +22,7 @@ from app.services.zone_service import ZoneService
 from app.spatial.h3_service import SpatialService, spatial_service
 from app.workers.trip_worker import TripSimulator
 from app.services.simulation_service import SimulationService
+from app.core.config import settings
 
 
 @dataclass
@@ -47,8 +48,9 @@ class Container:
     async def create(cls, redis_url: str | None = None, database_url: str | None = None) -> "Container":
         redis = create_redis(redis_url)
         engine, session_factory = create_db(database_url)
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
+        if settings.auto_create_tables:
+            async with engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
 
         events = EventBus()
         spatial = spatial_service
