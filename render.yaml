@@ -19,5 +19,5 @@ services:
         value: "true"
       - key: SIMULATION_AUTOSTART
         value: "true"
-      - key: CORS_ORIGINS
+      - key: https://ride-engine.netlify.app,http://localhost:5173
         value: http://localhost:5173
