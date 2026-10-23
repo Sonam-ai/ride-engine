@@ -1,10 +1,10 @@
 # Ride Engine: Real-Time Geospatial Matching & Dynamic Pricing
 
-![CI](https://github.com/YOURNAME/ride-engine/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/sonam-ai/ride-engine/actions/workflows/ci.yml/badge.svg)
 
 A simulation of a ride-hailing platform. Drivers stream GPS positions, riders request trips, the city is divided into Uber H3 hexagons, surge pricing is computed per hexagon (smoothed across neighbors and over time), and riders are matched to drivers in batches by solving a global assignment problem. A live React dashboard shows everything on a map.
 
-**Live demo:** _add your Vercel URL here_ (the backend sleeps when idle; the first load can take about a minute)
+**Live demo:** https://ride-engine.netlify.app/
 
 ![Dashboard](docs/dashboard.png)
 
@@ -20,31 +20,7 @@ Problems this project addresses:
 
 ## Architecture
 
-```mermaid
-flowchart LR
-  SIM[Built-in simulation<br/># Ride Engine: Real-Time Geospatial Matching & Dynamic Pricing
-
-![CI](https://github.com/YOURNAME/ride-engine/actions/workflows/ci.yml/badge.svg)
-
-A simulation of a ride-hailing platform. Drivers stream GPS positions, riders request trips, the city is divided into Uber H3 hexagons, surge pricing is computed per hexagon (smoothed across neighbors and over time), and riders are matched to drivers in batches by solving a global assignment problem. A live React dashboard shows everything on a map.
-
-**Live demo:** _add your Vercel URL here_ (the backend sleeps when idle; the first load can take about a minute)
-
-![Dashboard](docs/dashboard.png)
-
-> This is an engineering/simulation project, not a production ride-hailing platform. See [Known limitations](#known-limitations).
-
-## Project Overview
-
-Problems this project addresses:
-
-- **First-come-first-served matching** gives the first rider the nearest driver and can strand the next rider far away. Batch matching minimises total pickup cost instead.
-- **Price cliffs between neighbouring zones** invite gaming. Surge is smoothed across neighbouring hexagons and over time.
-- **Database write amplification**: GPS pings go to Redis only. PostgreSQL stores durable business history.
-
-## Architecture
-
-```mermaid
+mermaid
 flowchart LR
   SIM[Built-in simulation<br/>drivers + riders] -->|GPS pings, ride requests| SVC
   UI[React dashboard<br/>MapLibre] <-->|REST + WebSocket| API[FastAPI]
@@ -54,7 +30,6 @@ flowchart LR
   SVC --> DB[(PostgreSQL / SQLite<br/>history)]
   W[Background workers<br/>surge, matching, trips, stale sweeper] --> SVC
   SVC -->|events| BUS[Event bus] --> API
-```
 
 More diagrams and data flow: [docs/architecture.md](docs/architecture.md).
 
@@ -70,7 +45,7 @@ More diagrams and data flow: [docs/architecture.md](docs/architecture.md).
 
 ## Folder Structure
 
-```text
+text
 backend/app/
   api/v1/        route handlers (thin: no business logic)
   algorithms/    surge engine, matching, ride state machine (pure functions/classes)
@@ -87,13 +62,13 @@ backend/tests/   unit, integration and end-to-end tests
 frontend/src/    components, hooks, API client, types
 simulator/       standalone HTTP simulators and the load test
 docs/            architecture and performance notes
-```
+
 
 ## Running Locally
 
 Prerequisites: Python 3.12+, Node 18+.
 
-```bash
+bash
 # backend
 python -m venv backend/.venv
 # Windows: backend\.venv\Scripts\activate     macOS/Linux: source backend/.venv/bin/activate
@@ -106,16 +81,15 @@ python -m uvicorn app.main:app --reload
 cd frontend
 npm install
 npm run dev
-```
 
 Open http://localhost:5173 and press **Start**. API docs: http://localhost:8000/docs.
 Set `SIMULATION_AUTOSTART=true` in `.env` to start the simulation automatically.
 
 ## Docker Setup
 
-```bash
+bash
 docker compose up --build
-```
+
 
 | Service | URL |
 |---|---|
@@ -171,7 +145,7 @@ Interactive docs at `/docs` (Swagger). Main endpoints:
 
 Example quote:
 
-```json
+json
 POST /api/v1/rides/quote
 {"pickup": {"latitude": 12.9716, "longitude": 77.5946},
  "destination": {"latitude": 13.0, "longitude": 77.62}}
@@ -180,7 +154,6 @@ POST /api/v1/rides/quote
 {"pickup_h3": "8860145b49fffff", "supply": 12, "demand": 21, "distance_km": 5.1,
  "duration_min": 12.2, "base_fare": 50.0, "surge_multiplier": 1.35,
  "estimated_fare": 180.5, "currency": "INR"}
-```
 
 Errors: `422` invalid input (for example latitude 95), `400` malformed H3 id, `404` unknown driver/ride, `409` stale GPS update, duplicate open ride or invalid state transition.
 
@@ -221,7 +194,7 @@ Limitations: straight-line distances (no road network); the K-nearest limit can 
 
 ## Ride State Machine
 
-```mermaid
+mermaid
 stateDiagram-v2
   [*] --> REQUESTED
   REQUESTED --> QUOTED
@@ -238,7 +211,6 @@ stateDiagram-v2
   DRIVER_ARRIVED --> CANCELLED
   COMPLETED --> [*]
   CANCELLED --> [*]
-```
 
 Invalid transitions raise an error (HTTP 409). A started trip cannot be cancelled.
 
@@ -262,14 +234,13 @@ H3 cell sets are used instead of Redis GEO: "available drivers in this hexagon" 
 
 ## PostgreSQL Schema
 
-```mermaid
+mermaid
 erDiagram
   riders ||--o{ rides : requests
   drivers ||--o{ rides : drives
   rides ||--o{ trip_events : has
   rides ||--o{ ride_assignments : has
   rides ||--o{ fare_transactions : has
-```
 
 Tables: `drivers`, `riders`, `rides`, `ride_assignments`, `trip_events` (audit log), `fare_transactions`, `surge_history`, `driver_location_history` (model only; GPS pings are never written per update). Migrations: `backend/alembic`.
 
@@ -295,10 +266,9 @@ The backend runs a built-in simulation (wandering drivers, Poisson ride demand, 
 
 ## Testing
 
-```bash
+bash
 cd backend && python -m pytest -v
 cd frontend && npm run build
-```
 
 Covers H3 conversion and neighbours, distances, surge formula and smoothing, fares, matching (including global vs nearest-first), state transitions, Redis-backed services, API endpoints, WebSocket snapshot/events/reconnect, Alembic migrations, a full-lifecycle integration test and an API end-to-end test. CI runs these on every push.
 
